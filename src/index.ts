@@ -1,65 +1,49 @@
-export type t_route = {
-  name?: string;
+export type RouteName = string | symbol;
+
+export interface Route<T> {
+  name?: RouteName;
   path: string;
-  children?: t_route[];
-};
-export type t_format_route = t_route & {
-  url: URL;
-};
+  search?: Record<string, string | number | (string | number)[]>;
+  hash?: string;
+  children?: Route<T>[];
+  data: T;
+}
 
-export function createRouter(routes: t_route[]) {
-  const _routes: Map<string | t_route, t_format_route> = new Map();
-
-  function addRoute(route: t_route) {
-    const r = formatRoute(route);
-    const name = route.name;
-    if (name) {
-      _routes.set(name, r);
-    } else {
-      _routes.set(r, r);
+/**
+ *
+ * @param data
+ * @param cb return false break
+ */
+function loop<T extends { children?: T[] }>(
+  data: ArrayLike<T>,
+  cb: (data: T) => void | Boolean | null | undefined
+) {
+  for (const k in data) {
+    const d = data[k];
+    const r = cb(d);
+    if (r === false) break;
+    const children = d.children;
+    if (children) {
+      loop(children, cb);
     }
   }
-  function deleteRoute(route: string | t_route) {
-    _routes.delete(route);
-  }
-  function find(route: string | t_route) {
-
-  }
-
-  routes.forEach(addRoute);
-
-  // addEventListener("hashchange", (event) => {})
-  // addEventListener("onpopstate", (event) => {})
-
-  return {
-    routes: {
-      get() {
-        return Array.from(_routes.values());
-      },
-    },
-    addRoute,
-    deleteRoute,
-  };
 }
 
-export function formatRoute(routePath: string | t_route): t_format_route {
-  const route: t_route = {
-    path: "",
-  };
-  if (typeof routePath === "string") {
-    route.path = routePath;
-  } else {
-    Object.assign(route, routePath);
+export class Router<T> {
+  routes: Route<T>[] = [];
+  routeNameMap: Map<RouteName, Route<T>> = new Map();
+  routePathMap: Map<string, Route<T>> = new Map();
+
+  constructor(routes: Route<T>[]) {}
+  set(routes: Route<T>[]) {}
+  add(route: Route<T>, parent?: Route<T> | RouteName) {}
+  remove(route: Route<T>) {}
+  change(route: Route<T>) {}
+
+  matchRoute(route: Route<T> | RouteName) {}
+
+  initRoutes(routes: Route<T>[] = this.routes) {
+    const { routeNameMap, routePathMap } = this;
+    loop(this.routes, (route) => {});
   }
-  const url = new URL(route.path);
-
-  return {
-    ...route,
-    path: url.pathname,
-    url,
-  };
-}
-
-export function currentRoute() {
-  return formatRoute(location.pathname);
 }
